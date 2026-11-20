@@ -1,0 +1,20 @@
+{
+  "domain": "puk_zielonki",
+  "name": "PUK Zielonki",
+  "codeowners": [
+    "@adorobis"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "recorder"
+  ],
+  "documentation": "https://github.com/adorobis/ha-puk-zielonki",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/adorobis/ha-puk-zielonki/issues",
+  "requirements": [
+    "pypdf>=5.0"
+  ],
+  "single_config_entry": true,
+  "version": "1.0.0"
+}

@@ -1,0 +1,55 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "PUK Zielonki",
+        "description": "IMAP mailbox that receives the PUK Zielonki IBO invoice notifications. Leave the password empty to reuse it from an existing IMAP integration with the same server and user. Leave the folder empty to auto-detect Gmail's All Mail (or INBOX).",
+        "data": {
+          "host": "IMAP server",
+          "port": "Port",
+          "username": "Username",
+          "password": "(App) password",
+          "folder": "Folder",
+          "sender": "Sender"
+        }
+      },
+      "reauth_confirm": {
+        "title": "PUK Zielonki",
+        "description": "The server rejected the password for {username}. Enter a new one.",
+        "data": {
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect to the IMAP server or open the folder.",
+      "invalid_auth": "Invalid username or password.",
+      "no_messages": "No messages from this sender in the folder.",
+      "password_required": "Enter a password (no matching IMAP integration found)."
+    },
+    "abort": {
+      "already_configured": "Already configured.",
+      "single_instance_allowed": "Already configured.",
+      "reauth_successful": "Password updated."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "main_meter": {
+        "name": "Main water meter"
+      },
+      "garden_meter": {
+        "name": "Garden water meter"
+      },
+      "reading_date": {
+        "name": "Reading date"
+      },
+      "invoice_amount": {
+        "name": "Latest invoice"
+      },
+      "due_date": {
+        "name": "Payment due date"
+      }
+    }
+  }
+}

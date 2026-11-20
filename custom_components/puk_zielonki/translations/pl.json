@@ -1,0 +1,55 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "PUK Zielonki",
+        "description": "Skrzynka IMAP, na którą przychodzą powiadomienia o fakturach z IBO PUK Zielonki. Puste hasło = użyj hasła z istniejącej integracji IMAP dla tego samego serwera i użytkownika. Pusty folder = automatycznie „Wszystkie” (Gmail) lub INBOX.",
+        "data": {
+          "host": "Serwer IMAP",
+          "port": "Port",
+          "username": "Użytkownik",
+          "password": "Hasło (aplikacji)",
+          "folder": "Folder",
+          "sender": "Nadawca"
+        }
+      },
+      "reauth_confirm": {
+        "title": "PUK Zielonki",
+        "description": "Serwer odrzucił hasło dla {username}. Podaj nowe hasło.",
+        "data": {
+          "password": "Hasło"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Nie można połączyć się z serwerem IMAP lub otworzyć folderu.",
+      "invalid_auth": "Nieprawidłowy użytkownik lub hasło.",
+      "no_messages": "W folderze nie ma wiadomości od tego nadawcy.",
+      "password_required": "Podaj hasło (nie znaleziono pasującej integracji IMAP)."
+    },
+    "abort": {
+      "already_configured": "Już skonfigurowane.",
+      "single_instance_allowed": "Już skonfigurowane.",
+      "reauth_successful": "Hasło zaktualizowane."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "main_meter": {
+        "name": "Licznik główny"
+      },
+      "garden_meter": {
+        "name": "Licznik ogrodowy"
+      },
+      "reading_date": {
+        "name": "Data odczytu"
+      },
+      "invoice_amount": {
+        "name": "Ostatnia faktura"
+      },
+      "due_date": {
+        "name": "Termin płatności"
+      }
+    }
+  }
+}

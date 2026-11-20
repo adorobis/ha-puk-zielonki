@@ -1,6 +1,9 @@
 {
   "domain": "puk_zielonki",
   "name": "PUK Zielonki",
+  "categories": [
+    "water.meters_leak_detection"
+  ],
   "codeowners": [
     "@adorobis"
   ],

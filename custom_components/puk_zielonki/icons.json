@@ -1,0 +1,8 @@
+{
+  "entity": {
+    "sensor": {
+      "main_meter_offset": { "default": "mdi:scale-unbalanced" },
+      "garden_meter_offset": { "default": "mdi:scale-unbalanced" }
+    }
+  }
+}

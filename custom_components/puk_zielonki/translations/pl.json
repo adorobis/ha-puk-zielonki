@@ -49,7 +49,24 @@
       },
       "due_date": {
         "name": "Termin płatności"
+      },
+      "main_meter_offset": {
+        "name": "Odchyłka licznika głównego"
+      },
+      "garden_meter_offset": {
+        "name": "Odchyłka licznika ogrodowego"
       }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Czujniki referencyjne",
+        "description": "Wybierz czujnik (np. sumę z licznika impulsowego ESPHome) do porównania z odczytami z faktur. Musi mieć statystyki długoterminowe (state_class). Pola:\n{meters}"
+      }
+    },
+    "abort": {
+      "no_meters": "Nie znaleziono jeszcze żadnych liczników na fakturach."
     }
   }
 }

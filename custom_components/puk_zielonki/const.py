@@ -17,5 +17,8 @@ DEFAULT_FOLDER = ""
 UPDATE_INTERVAL = timedelta(hours=6)
 STORAGE_VERSION = 1
 
+# Options: reference sensor per property and meter, key "reference_<slug>_<meter>".
+CONF_REFERENCE = "reference"
+
 METER_MAIN = "main"
 METER_GARDEN = "garden"

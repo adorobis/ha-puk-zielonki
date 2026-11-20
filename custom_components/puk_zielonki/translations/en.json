@@ -49,7 +49,24 @@
       },
       "due_date": {
         "name": "Payment due date"
+      },
+      "main_meter_offset": {
+        "name": "Main meter offset"
+      },
+      "garden_meter_offset": {
+        "name": "Garden meter offset"
       }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Reference sensors",
+        "description": "Pick a sensor (e.g. an ESPHome pulse meter total) to compare with the invoice readings. It needs long-term statistics (a state_class). Fields:\n{meters}"
+      }
+    },
+    "abort": {
+      "no_meters": "No meters found on the invoices yet."
     }
   }
 }

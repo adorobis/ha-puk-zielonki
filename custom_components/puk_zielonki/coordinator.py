@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import logging
 from typing import Any
 
@@ -13,10 +13,20 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .const import CONF_FOLDER, CONF_SENDER, DOMAIN, STORAGE_VERSION, UPDATE_INTERVAL
+from .comparison import Comparison, async_compare
+from .const import (
+    CONF_FOLDER,
+    CONF_REFERENCE,
+    CONF_SENDER,
+    DOMAIN,
+    METER_GARDEN,
+    METER_MAIN,
+    STORAGE_VERSION,
+    UPDATE_INTERVAL,
+)
 from .mail import MailAuthError, MailClient, MailError
 from .parser import Invoice, ParseError, Reading, latest_by_meter, parse_message
-from .statistics import async_update_statistics
+from .statistics import account_slug, async_update_statistics
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -35,6 +45,7 @@ class PropertyData:
     invoices: list[Invoice]
     latest_invoice: Invoice | None
     meters: dict[str, tuple[Invoice, Reading]]
+    comparisons: dict[str, Comparison] = field(default_factory=dict)
 
     @property
     def address(self) -> str | None:
@@ -56,6 +67,11 @@ class PukData:
 type PukConfigEntry = ConfigEntry[PukCoordinator]
 
 
+def reference_key(account: str, meter: str) -> str:
+    """Options key of the reference sensor for one meter of one property."""
+    return f"{CONF_REFERENCE}_{account_slug(account)}_{meter}"
+
+
 class PukCoordinator(DataUpdateCoordinator[PukData]):
     """Keeps a local cache of parsed invoices; only new messages are downloaded."""
 
@@ -70,6 +86,7 @@ class PukCoordinator(DataUpdateCoordinator[PukData]):
         )
         self._cache: dict[str, Any] | None = None
         self._stats_written = False
+        self._comparisons: dict[tuple[str, str], Comparison] = {}
 
     async def _load_cache(self) -> dict[str, Any]:
         if self._cache is None:
@@ -152,7 +169,33 @@ class PukCoordinator(DataUpdateCoordinator[PukData]):
             for prop in properties.values():
                 async_update_statistics(self.hass, prop.account, prop.invoices)
             self._stats_written = True
+        await self._async_update_comparisons(properties, refresh=bool(new))
         if not first_run:
             for inv in new:
                 self.hass.bus.async_fire(EVENT_NEW_INVOICE, inv.as_dict())
         return PukData(properties=properties, folder=folder)
+
+    async def _async_update_comparisons(
+        self, properties: dict[str, PropertyData], *, refresh: bool
+    ) -> None:
+        """Compare readings with the configured reference sensors.
+
+        Done once per setup (options changes reload the entry) and again when
+        new invoices arrive; the recorder lookups are not repeated every poll.
+        """
+        options = self.config_entry.options
+        for account, prop in properties.items():
+            for meter in (METER_MAIN, METER_GARDEN):
+                entity_id = options.get(reference_key(account, meter))
+                if not entity_id or meter not in prop.meters:
+                    continue
+                key = (account, meter)
+                cached = self._comparisons.get(key)
+                if refresh or cached is None or cached.entity_id != entity_id:
+                    try:
+                        cached = await async_compare(self.hass, prop.invoices, meter, entity_id)
+                    except Exception:
+                        _LOGGER.exception("Comparing %s with %s failed", meter, entity_id)
+                        continue
+                    self._comparisons[key] = cached
+                prop.comparisons[meter] = cached

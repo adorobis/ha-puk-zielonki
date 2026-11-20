@@ -87,6 +87,43 @@ def _invoice_attrs(prop: PropertyData) -> dict[str, Any] | None:
     }
 
 
+def _offset_value(meter: str) -> Callable[[PropertyData], float | None]:
+    def fn(prop: PropertyData) -> float | None:
+        comp = prop.comparisons.get(meter)
+        return comp.latest.offset if comp and comp.latest else None
+
+    return fn
+
+
+def _offset_attrs(meter: str) -> Callable[[PropertyData], dict[str, Any] | None]:
+    def fn(prop: PropertyData) -> dict[str, Any] | None:
+        comp = prop.comparisons.get(meter)
+        if not comp or not comp.latest:
+            return None
+        last = comp.latest
+        return {
+            "reference_entity": comp.entity_id,
+            "reading_date": last.date,
+            "invoice_reading": last.invoice,
+            "sensor_reading": last.sensor,
+            "invoice_consumption": last.invoice_consumption,
+            "sensor_consumption": last.sensor_consumption,
+            "consumption_diff": last.consumption_diff,
+            "consumption_diff_pct": last.consumption_diff_pct,
+            "history": [r.as_dict() for r in comp.rows[-12:]],
+        }
+
+    return fn
+
+
+def _has_comparison(meter: str) -> Callable[[PropertyData], bool]:
+    def fn(prop: PropertyData) -> bool:
+        comp = prop.comparisons.get(meter)
+        return bool(comp and comp.rows)
+
+    return fn
+
+
 def _main_reading_date(prop: PropertyData) -> date | None:
     hit = prop.meters.get(METER_MAIN)
     return as_date(hit[1].period_end) if hit else None
@@ -113,6 +150,24 @@ SENSORS: tuple[PukSensorDescription, ...] = (
         value_fn=_meter_value(METER_GARDEN),
         attrs_fn=_meter_attrs(METER_GARDEN),
         exists_fn=lambda prop: METER_GARDEN in prop.meters,
+    ),
+    PukSensorDescription(
+        key="main_meter_offset",
+        translation_key="main_meter_offset",
+        native_unit_of_measurement=UnitOfVolume.CUBIC_METERS,
+        suggested_display_precision=2,
+        value_fn=_offset_value(METER_MAIN),
+        attrs_fn=_offset_attrs(METER_MAIN),
+        exists_fn=_has_comparison(METER_MAIN),
+    ),
+    PukSensorDescription(
+        key="garden_meter_offset",
+        translation_key="garden_meter_offset",
+        native_unit_of_measurement=UnitOfVolume.CUBIC_METERS,
+        suggested_display_precision=2,
+        value_fn=_offset_value(METER_GARDEN),
+        attrs_fn=_offset_attrs(METER_GARDEN),
+        exists_fn=_has_comparison(METER_GARDEN),
     ),
     PukSensorDescription(
         key="reading_date",

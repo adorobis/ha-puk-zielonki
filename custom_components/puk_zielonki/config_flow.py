@@ -6,9 +6,17 @@ from collections.abc import Mapping
 import logging
 from typing import Any
 
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
+from homeassistant.config_entries import (
+    ConfigEntry,
+    ConfigFlow,
+    ConfigFlowResult,
+    OptionsFlowWithReload,
+)
 from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_PORT, CONF_USERNAME
+from homeassistant.core import callback
 from homeassistant.helpers.selector import (
+    EntitySelector,
+    EntitySelectorConfig,
     TextSelector,
     TextSelectorConfig,
     TextSelectorType,
@@ -23,7 +31,10 @@ from .const import (
     DEFAULT_SENDER,
     DEFAULT_SERVER,
     DOMAIN,
+    METER_GARDEN,
+    METER_MAIN,
 )
+from .coordinator import reference_key
 from .mail import MailAuthError, MailClient, MailError
 
 _LOGGER = logging.getLogger(__name__)
@@ -44,6 +55,11 @@ class PukZielonkiConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle setup."""
 
     VERSION = 1
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry: ConfigEntry) -> PukOptionsFlow:
+        return PukOptionsFlow()
 
     def _imap_entry(
         self, host: str | None = None, user: str | None = None
@@ -130,4 +146,46 @@ class PukZielonkiConfigFlow(ConfigFlow, domain=DOMAIN):
             data_schema=vol.Schema({vol.Required(CONF_PASSWORD): _PASSWORD}),
             description_placeholders={"username": entry.data[CONF_USERNAME]},
             errors=errors,
+        )
+
+
+class PukOptionsFlow(OptionsFlowWithReload):
+    """Pick a reference sensor (e.g. a pulse meter total) for each meter."""
+
+    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        coordinator = getattr(self.config_entry, "runtime_data", None)
+        properties = coordinator.data.properties if coordinator and coordinator.data else {}
+        meters = [
+            (account, meter)
+            for account, prop in sorted(properties.items())
+            for meter in (METER_MAIN, METER_GARDEN)
+            if meter in prop.meters
+        ]
+        if not meters:
+            return self.async_abort(reason="no_meters")
+        keys = {reference_key(a, m): (a, m) for a, m in meters}
+
+        if user_input is not None:
+            # Keep options of properties not shown now; drop cleared fields.
+            options = {k: v for k, v in self.config_entry.options.items() if k not in keys}
+            options.update({k: v for k, v in user_input.items() if k in keys and v})
+            return self.async_create_entry(data=options)
+
+        selector = EntitySelector(EntitySelectorConfig(domain="sensor", device_class="water"))
+        schema = vol.Schema(
+            {
+                vol.Optional(
+                    key,
+                    description={"suggested_value": self.config_entry.options.get(key)},
+                ): selector
+                for key in keys
+            }
+        )
+        labels = {"main": "licznik główny / main meter", "garden": "licznik ogrodowy / garden"}
+        return self.async_show_form(
+            step_id="init",
+            data_schema=schema,
+            description_placeholders={
+                "meters": "\n".join(f"- `{k}`: {a} {labels[m]}" for k, (a, m) in keys.items())
+            },
         )

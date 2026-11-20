@@ -43,6 +43,10 @@ the date the e-mail arrived.
   estimate. Invoice amounts are spread the same way. A missing invoice does not lose
   consumption, because the next reading is counted from the last known one.
 - **Event** `puk_zielonki_new_invoice` with the parsed invoice when a new one arrives.
+- **Comparison with your own meter** (optional): pick a reference sensor per meter, for
+  example the total of an ESPHome pulse counter. An **offset** sensor then shows how far
+  the reference sensor was from the invoice on the last reading date, and how the
+  consumption of the billing period compares (see below).
 
 ## Requirements
 
@@ -86,6 +90,28 @@ Settings → Devices & services → **Add integration** → **PUK Zielonki**:
 The mailbox is checked every 6 hours. If the password stops working, Home Assistant asks
 for a new one.
 
+## Comparing with a pulse meter
+
+Integration options (Settings → Devices & services → PUK Zielonki → **Configure**) list one
+field per meter found on the invoices, named `reference_<property>_<meter>`. Pick the
+sensor that counts the same water, for example the total of an ESPHome pulse meter. It
+needs long-term statistics, so it must have a `state_class` (`total` or
+`total_increasing`).
+
+For every reading on the invoices, the reference sensor's statistics are read at 12:00 on
+the reading date. The invoice has no time of day, so this is an approximation. A
+"Main meter offset" / "Garden meter offset" sensor then shows:
+
+- **state**: sensor value minus invoice reading on the latest reading date. The invoice
+  reading is a whole number and the reading time is unknown, so about ±1 m³ is normal. A
+  growing offset means the pulse meter needs recalibrating.
+- **attributes**: the readings from both sources, the consumption of the billing period
+  from both (`invoice_consumption`, `sensor_consumption`, `consumption_diff`,
+  `consumption_diff_pct`), and `history` with the last 12 reading dates.
+
+The period consumption does not depend on the pulse meter's calibration, so it is the
+better measure of how accurate the pulse meter is.
+
 ## Notes
 
 - The meter sensors have no `state_class` on purpose. The invoice e-mail arrives about a
@@ -118,6 +144,11 @@ załączoną fakturę PDF i tworzy:
 Odczyty w statystykach mają datę z faktury (koniec okresu rozliczeniowego), a nie datę
 przyjścia maila. Zużycie między odczytami jest rozłożone równo na dni, więc wykres miesięczny
 pokazuje każdy miesiąc. Wartości w dniach odczytu są dokładne, dni pomiędzy to szacunek.
+
+Opcjonalnie w opcjach integracji (**Konfiguruj**) można wskazać dla każdego licznika
+czujnik referencyjny, np. sumę z licznika impulsowego ESPHome. Sensor „Odchyłka licznika”
+pokazuje różnicę między tym czujnikiem a odczytem z faktury w dniu odczytu, a w atrybutach
+porównanie zużycia w okresie rozliczeniowym i historię.
 
 Instalacja: Ustawienia → **Marketplace** → ⋮ → **Custom repositories** →
 `https://github.com/adorobis/ha-puk-zielonki` (typ **Integration**) → **Download**, potem
